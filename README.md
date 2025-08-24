@@ -1,20 +1,24 @@
 # 🥋 Sumo News Emailer
 
-An AI-powered application that scrapes news from the official Japan Sumo Association website and converts it into bite-sized, tweet-like email summaries.
+An AI-powered Python application that scrapes news from multiple sumo wrestling sources and converts them into bite-sized, tweet-like email summaries.
 
 ## Features
 
-- 📰 **News Scraping**: Automatically fetches the latest sumo wrestling news from sumo.or.jp
+- 📰 **Multi-Source Scraping**: Automatically fetches news from multiple sumo sources:
+  - Japan Sumo Association (sumo.or.jp)  
+  - Japan Times Sumo Section
+  - International Federation of Sumo (IFS)
 - 🤖 **AI Processing**: Uses OpenAI to create engaging, tweet-like summaries (under 280 characters)
 - ✉️ **Email Digest**: Sends formatted HTML and text emails with news summaries
-- 🎯 **Smart Filtering**: Filters relevant news and removes duplicates
-- 🛡️ **Rate Limiting**: Respectful scraping with built-in delays
+- 🎯 **Smart Filtering**: Filters relevant news, removes duplicates, and shows source attribution
+- 🛡️ **Rate Limiting**: Respectful scraping with built-in delays between sources
+- 🔄 **Fallback Support**: Works with or without OpenAI API key (uses basic summaries as fallback)
 
 ## Setup
 
 1. **Clone and install dependencies**:
    ```bash
-   npm install
+   pip install -r requirements.txt
    ```
 
 2. **Configure environment variables**:
@@ -35,26 +39,39 @@ An AI-powered application that scrapes news from the official Japan Sumo Associa
 
 **Run the main application**:
 ```bash
-npm start
+python src/main.py
 ```
 
 **Test all components**:
 ```bash
-node src/index.js --test
+python src/main.py --test
 ```
 
-**Development mode with auto-restart**:
+**Get help**:
 ```bash
-npm run dev
+python src/main.py --help
+```
+
+## Testing
+
+**Quick scraping test (no setup required)**:
+```bash
+python test_scraping.py
+```
+
+**Test all components**:
+```bash
+python src/main.py --test
 ```
 
 ## How It Works
 
-1. **Scraping**: Fetches news from the English version of sumo.or.jp
-2. **Content Analysis**: Extracts relevant sumo news using keyword filtering
-3. **AI Processing**: Creates concise, engaging summaries using OpenAI
-4. **Email Generation**: Formats news into an attractive HTML/text email
-5. **Delivery**: Sends the digest to your specified email address
+1. **Multi-Source Scraping**: Fetches news from multiple sumo wrestling websites
+2. **Content Analysis**: Extracts relevant sumo news using keyword filtering and deduplication
+3. **Source Attribution**: Labels each news item with its source for transparency
+4. **AI Processing**: Creates concise, engaging summaries using OpenAI (or basic summaries as fallback)
+5. **Email Generation**: Formats news into an attractive HTML/text email digest
+6. **Delivery**: Sends the digest to your specified email address
 
 ## Email Configuration
 
@@ -82,13 +99,13 @@ You can schedule this application to run daily using:
 
 **Windows Task Scheduler**:
 ```cmd
-schtasks /create /tn "SumoNews" /tr "node C:\path\to\src\index.js" /sc daily /st 09:00
+schtasks /create /tn "SumoNews" /tr "python C:\path\to\src\main.py" /sc daily /st 09:00
 ```
 
 **Linux/Mac Cron**:
 ```bash
 # Add to crontab (runs daily at 9 AM)
-0 9 * * * cd /path/to/sumo_updates && node src/index.js
+0 9 * * * cd /path/to/sumo_updates && python src/main.py
 ```
 
 ## Troubleshooting
@@ -100,8 +117,8 @@ schtasks /create /tn "SumoNews" /tr "node C:\path\to\src\index.js" /sc daily /st
 
 ## Dependencies
 
-- `axios`: HTTP requests for web scraping
-- `cheerio`: HTML parsing and manipulation
-- `nodemailer`: Email sending functionality
+- `requests`: HTTP requests for web scraping
+- `beautifulsoup4`: HTML parsing and manipulation
 - `openai`: AI text processing
-- `dotenv`: Environment variable management
+- `python-dotenv`: Environment variable management
+- `smtplib` & `email`: Built-in email sending functionality
