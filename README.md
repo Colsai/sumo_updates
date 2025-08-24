@@ -13,6 +13,7 @@ An AI-powered Python application that scrapes news from multiple sumo wrestling 
 - 🎯 **Smart Filtering**: Filters relevant news, removes duplicates, and shows source attribution
 - 🛡️ **Rate Limiting**: Respectful scraping with built-in delays between sources
 - 🔄 **Fallback Support**: Works with or without OpenAI API key (uses basic summaries as fallback)
+- 📊 **SQLite Database**: Tracks all scraped articles, prevents duplicates, maintains processing history
 
 ## Setup
 
@@ -64,14 +65,38 @@ python test_scraping.py
 python src/main.py --test
 ```
 
+## Database Management
+
+**View database statistics**:
+```bash
+python manage_db.py stats
+```
+
+**View recent articles**:
+```bash
+python manage_db.py recent
+```
+
+**View unprocessed articles**:
+```bash
+python manage_db.py unprocessed
+```
+
+**Clean up old articles** (removes articles older than 30 days):
+```bash
+python manage_db.py cleanup
+```
+
 ## How It Works
 
 1. **Multi-Source Scraping**: Fetches news from multiple sumo wrestling websites
-2. **Content Analysis**: Extracts relevant sumo news using keyword filtering and deduplication
-3. **Source Attribution**: Labels each news item with its source for transparency
-4. **AI Processing**: Creates concise, engaging summaries using OpenAI (or basic summaries as fallback)
-5. **Email Generation**: Formats news into an attractive HTML/text email digest
-6. **Delivery**: Sends the digest to your specified email address
+2. **Database Storage**: Saves all articles to SQLite database with duplicate prevention
+3. **Content Analysis**: Extracts relevant sumo news using keyword filtering and deduplication
+4. **Source Attribution**: Labels each news item with its source for transparency
+5. **AI Processing**: Creates concise, engaging summaries using OpenAI (or basic summaries as fallback)
+6. **Email Generation**: Formats news into an attractive HTML/text email digest
+7. **Processing Tracking**: Marks articles as processed to avoid re-sending
+8. **Delivery**: Sends the digest to your specified email address
 
 ## Email Configuration
 

@@ -4,10 +4,11 @@ import re
 from datetime import datetime
 from typing import List, Dict, Optional
 import time
+from database import NewsDatabase
 
 
 class SumoNewsScraper:
-    def __init__(self):
+    def __init__(self, db_path: str = 'sumo_news.db'):
         self.sources = [
             {
                 'name': 'Japan Sumo Association',
@@ -28,8 +29,9 @@ class SumoNewsScraper:
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
+        self.db = NewsDatabase(db_path)
 
-    def scrape_news(self) -> List[Dict]:
+    def scrape_news(self, save_to_db: bool = True) -> List[Dict]:
         all_news = []
         
         for source in self.sources:
@@ -51,8 +53,41 @@ class SumoNewsScraper:
         unique_news = self._remove_duplicates(all_news)
         relevant_news = self._filter_relevant_news(unique_news)
         
+        if save_to_db and relevant_news:
+            new_articles = self.db.save_articles(relevant_news)
+            print(f'Saved {new_articles} new articles to database')
+        
         print(f'Found {len(relevant_news)} total news items from all sources')
         return relevant_news[:10]  # Return top 10 items from all sources
+
+    def get_unprocessed_articles(self, limit: int = 10) -> List[Dict]:
+        """Get unprocessed articles from database for email digest"""
+        articles = self.db.get_unprocessed_articles(limit)
+        
+        # Convert database format to scraper format
+        formatted_articles = []
+        for article in articles:
+            formatted_articles.append({
+                'id': article['id'],
+                'title': article['title'],
+                'url': article['url'],
+                'content': article['content'],
+                'source': article['source'],
+                'date': article['article_date'] or article['scraped_at'][:10],
+                'raw_text': article['title']
+            })
+        
+        return formatted_articles
+
+    def mark_articles_processed(self, articles: List[Dict], summaries: List[str] = None):
+        """Mark articles as processed in the database"""
+        article_ids = [article['id'] for article in articles if 'id' in article]
+        if article_ids:
+            self.db.mark_as_processed(article_ids, summaries)
+
+    def get_database_stats(self) -> Dict:
+        """Get database statistics"""
+        return self.db.get_stats()
 
     def _parse_sumo_org(self, url: str) -> List[Dict]:
         """Parse news from Japan Sumo Association website"""

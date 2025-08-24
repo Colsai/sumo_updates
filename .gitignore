@@ -50,3 +50,8 @@ logs/
 
 # Test files
 test_scraping.py
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3

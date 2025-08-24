@@ -33,24 +33,29 @@ class SumoNewsApp:
             print('Starting Sumo News Digest Generation...')
             print('=' * 50)
 
-            # Step 1: Scrape news
-            print('Scraping news from sumo.or.jp...')
-            news_items = self.scraper.scrape_news()
+            # Step 1: Scrape news and save to database
+            print('Scraping news from multiple sources...')
+            self.scraper.scrape_news(save_to_db=True)
+
+            # Step 2: Get unprocessed articles from database
+            print('Getting unprocessed articles from database...')
+            news_items = self.scraper.get_unprocessed_articles(limit=10)
             
             if not news_items:
-                print('No news items found. Exiting.')
+                print('No unprocessed news items found. Exiting.')
                 return
 
-            print(f'Found {len(news_items)} news items:')
+            print(f'Found {len(news_items)} unprocessed news items:')
             for i, item in enumerate(news_items):
                 source_label = f"[{item.get('source', 'Unknown')}]"
                 print(f'  {i + 1}. {source_label} {item["title"][:60]}...')
 
-            # Step 2: Enhance with article content (optional)
+            # Step 2b: Enhance with article content (optional)
             print('\nFetching article content...')
             for item in news_items:
-                item['content'] = self.scraper.scrape_article_content(item['url'])
-                time.sleep(1)  # Rate limiting
+                if not item.get('content'):
+                    item['content'] = self.scraper.scrape_article_content(item['url'])
+                    time.sleep(1)  # Rate limiting
 
             # Step 3: Process with AI (if available)
             if self.ai_processor:
@@ -88,8 +93,22 @@ class SumoNewsApp:
             if result['success']:
                 print('Email sent successfully!')
                 print(f'Message ID: {result.get("message_id", "N/A")}')
+                
+                # Mark articles as processed in database
+                summaries = [item.get('summary', '') for item in processed_items]
+                self.scraper.mark_articles_processed(processed_items, summaries)
+                print('Articles marked as processed in database.')
+                
             else:
                 print(f'Failed to send email: {result["error"]}')
+
+            # Show database stats
+            stats = self.scraper.get_database_stats()
+            print(f'\nDatabase Stats:')
+            print(f'  Total articles: {stats["total_articles"]}')
+            print(f'  Processed: {stats["processed_articles"]}')
+            print(f'  Unprocessed: {stats["unprocessed_articles"]}')
+            print(f'  Last 24h: {stats["articles_last_24h"]}')
 
             print('\nSumo News Digest completed!')
             
@@ -101,6 +120,14 @@ class SumoNewsApp:
     def test_components(self):
         print('Testing application components...\n')
 
+        # Test database
+        print('Testing database...')
+        try:
+            stats = self.scraper.get_database_stats()
+            print(f'Database: OK (total: {stats["total_articles"]} articles)\n')
+        except Exception as error:
+            print(f'Database: Failed ({error})\n')
+
         # Test email connection
         print('Testing email connection...')
         email_ok = self.email_sender.test_connection()
@@ -109,7 +136,7 @@ class SumoNewsApp:
         # Test scraper
         print('Testing news scraper...')
         try:
-            news = self.scraper.scrape_news()
+            news = self.scraper.scrape_news(save_to_db=False)  # Don't save during test
             print(f'Scraper: OK (found {len(news)} items)\n')
         except Exception as error:
             print(f'Scraper: Failed ({error})\n')
