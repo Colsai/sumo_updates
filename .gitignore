@@ -59,3 +59,6 @@ test_scraping.py
 
 # Generated examples
 example_email.html
+
+# Images - keep the header image but exclude temporary ones
+img/temp_*

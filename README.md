@@ -97,11 +97,12 @@ python generate_example.py
 This creates an example email digest showing the format and content style. See [EXAMPLE_EMAIL.md](EXAMPLE_EMAIL.md) for a full sample output.
 
 **Sample email features:**
+- Custom pixel art header image ("SUMO UPDATES NEWSLETTER")
 - Professional orange-themed HTML design
 - Tweet-like AI summaries (under 280 characters)
 - Source attribution for each article
 - Unsubscribe information and privacy compliance
-- Mobile-responsive layout
+- Mobile-responsive layout with embedded images
 
 ## How It Works
 

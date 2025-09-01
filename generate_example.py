@@ -94,7 +94,16 @@ def generate_example_email():
     print("To unsubscribe: Reply with 'UNSUBSCRIBE' or contact the sender.")
     print("We respect your privacy and email preferences.")
     
-    # Create a simple HTML version without using the emailer class
+    # Encode the image as base64 for embedding in HTML
+    import base64
+    img_path = os.path.join(os.path.dirname(__file__), 'img', 'b3f127bc-12dd-4fcc-ac1c-c7ba53c1034b.png')
+    img_base64 = ""
+    if os.path.exists(img_path):
+        with open(img_path, 'rb') as img_file:
+            img_data = img_file.read()
+            img_base64 = base64.b64encode(img_data).decode('utf-8')
+
+    # Create a simple HTML version with embedded image
     html_content = f"""
 <!DOCTYPE html>
 <html>
@@ -102,16 +111,16 @@ def generate_example_email():
     <title>{email_meta['subject']}</title>
     <style>
         body {{ font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background-color: #d2691e; color: white; padding: 20px; text-align: center; }}
+        .header-image {{ text-align: center; margin-bottom: 30px; }}
+        .header-image img {{ max-width: 100%; height: auto; display: block; margin: 0 auto; }}
         .article {{ margin: 20px 0; padding: 15px; border-left: 4px solid #d2691e; background-color: #fafafa; }}
         .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px; }}
         a {{ color: #d2691e; text-decoration: none; }}
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Sumo Wrestling News</h1>
-        <p>Your daily digest of sumo updates</p>
+    <div class="header-image">
+        {"<img src='data:image/png;base64," + img_base64 + "' alt='Sumo Updates Newsletter'>" if img_base64 else "<h1>Sumo Updates Newsletter</h1>"}
     </div>
     
     <p>{email_meta['intro']}</p>
