@@ -30,6 +30,12 @@ class SumoNewsApp:
 
     def run(self):
         try:
+            print('''
+    Sumo News Emailer
+         ___
+        ( o.o )
+         \\_/
+    ''')
             print('Starting Sumo News Digest Generation...')
             print('=' * 50)
 
@@ -93,6 +99,8 @@ class SumoNewsApp:
             if result['success']:
                 print('Email sent successfully!')
                 print(f'Message ID: {result.get("message_id", "N/A")}')
+                print('\nNote: Recipients can unsubscribe by replying with "UNSUBSCRIBE"')
+                print('or by contacting the sender directly.')
                 
                 # Mark articles as processed in database
                 summaries = [item.get('summary', '') for item in processed_items]
@@ -110,7 +118,11 @@ class SumoNewsApp:
             print(f'  Unprocessed: {stats["unprocessed_articles"]}')
             print(f'  Last 24h: {stats["articles_last_24h"]}')
 
-            print('\nSumo News Digest completed!')
+            print('''
+    Digest Complete! \\o/
+    
+    Sumo News Digest completed successfully!
+    ''')
             
         except Exception as error:
             print(f'Application error: {error}')
@@ -118,6 +130,10 @@ class SumoNewsApp:
             traceback.print_exc()
 
     def test_components(self):
+        print('''
+    Testing Components
+         (^_^)
+    ''')
         print('Testing application components...\n')
 
         # Test database
@@ -159,6 +175,9 @@ class SumoNewsApp:
 
 def show_help():
     help_text = """
+    Sumo News Emailer Help
+           (?)
+    
 Sumo News Emailer
 
 Usage:

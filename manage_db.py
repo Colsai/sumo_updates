@@ -15,6 +15,8 @@ def show_stats():
     scraper = SumoNewsScraper()
     stats = scraper.get_database_stats()
     
+    print('    Database Statistics (^_^)')
+    print()
     print("Database Statistics:")
     print("=" * 30)
     print(f"Total articles: {stats['total_articles']}")
@@ -30,6 +32,8 @@ def show_recent():
     db = NewsDatabase()
     articles = db.get_recent_articles(days=7, limit=20)
     
+    print('    Recent Articles (^_^)')
+    print()
     print("Recent Articles (Last 7 days):")
     print("=" * 50)
     
@@ -63,6 +67,8 @@ def show_unprocessed():
 
 def cleanup():
     """Clean up old articles"""
+    print('    Database Cleanup (~_~)')
+    print()
     print("Cleaning up articles older than 30 days...")
     db = NewsDatabase()
     deleted = db.cleanup_old_articles(days=30)

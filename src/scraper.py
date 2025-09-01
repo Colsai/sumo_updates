@@ -35,7 +35,7 @@ class SumoNewsScraper:
         all_news = []
         
         for source in self.sources:
-            print(f'Scraping {source["name"]}...')
+            print(f'  Fetching from {source["name"]}... (o_o)')
             try:
                 news_items = source['parser'](source['url'])
                 for item in news_items:

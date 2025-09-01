@@ -56,3 +56,6 @@ test_scraping.py
 *.db
 *.sqlite
 *.sqlite3
+
+# Generated examples
+example_email.html

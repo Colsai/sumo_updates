@@ -83,8 +83,12 @@ class EmailSender:
   {news_items}
   
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;">
-    <p>This digest was automatically generated from <a href="https://www.sumo.or.jp/En/" style="color: #d2691e;">sumo.or.jp</a></p>
+    <p>This digest was automatically generated from multiple sumo news sources</p>
     <p>Generated on {datetime.now().strftime('%B %d, %Y')} at {datetime.now().strftime('%I:%M %p')}</p>
+    <p style="margin-top: 15px; font-size: 11px;">
+      To unsubscribe from these emails, please reply with "UNSUBSCRIBE" or contact the sender.<br>
+      This is an automated digest service. We respect your privacy and email preferences.
+    </p>
   </div>
 </body>
 </html>'''
@@ -106,8 +110,11 @@ class EmailSender:
 {news_content}
 
 ---
-This digest was automatically generated from sumo.or.jp
-Generated on {datetime.now().strftime('%B %d, %Y')} at {datetime.now().strftime('%I:%M %p')}'''
+This digest was automatically generated from multiple sumo news sources
+Generated on {datetime.now().strftime('%B %d, %Y')} at {datetime.now().strftime('%I:%M %p')}
+
+To unsubscribe: Reply with "UNSUBSCRIBE" or contact the sender.
+We respect your privacy and email preferences.'''
 
     def test_connection(self) -> bool:
         try:

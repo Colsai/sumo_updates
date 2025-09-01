@@ -87,6 +87,22 @@ python manage_db.py unprocessed
 python manage_db.py cleanup
 ```
 
+## Example Output
+
+**Generate a sample email**:
+```bash
+python generate_example.py
+```
+
+This creates an example email digest showing the format and content style. See [EXAMPLE_EMAIL.md](EXAMPLE_EMAIL.md) for a full sample output.
+
+**Sample email features:**
+- Professional orange-themed HTML design
+- Tweet-like AI summaries (under 280 characters)
+- Source attribution for each article
+- Unsubscribe information and privacy compliance
+- Mobile-responsive layout
+
 ## How It Works
 
 1. **Multi-Source Scraping**: Fetches news from multiple sumo wrestling websites
