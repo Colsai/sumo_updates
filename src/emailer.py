@@ -13,7 +13,7 @@ class EmailSender:
     def __init__(self, config: Dict[str, str]):
         self.config = config
         self.smtp_server = None
-        self.header_image_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'img', 'b3f127bc-12dd-4fcc-ac1c-c7ba53c1034b.png')
+        self.header_image_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'images', 'b3f127bc-12dd-4fcc-ac1c-c7ba53c1034b.png')
         self.archives_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'archives')
 
     def send_news_digest(self, summaries: List[Dict], email_meta: Dict[str, str]) -> Dict:
@@ -79,11 +79,11 @@ class EmailSender:
           <strong>{i + 1}.</strong> {item['summary']}
         </div>
         <div style="font-size: 12px; color: #666; margin-bottom: 5px;">
-          📅 {datetime.fromisoformat(item['date'].replace('Z', '+00:00')).strftime('%B %d, %Y') if 'T' not in item['date'] else datetime.strptime(item['date'], '%Y-%m-%d').strftime('%B %d, %Y')}
+          Date: {datetime.fromisoformat(item['date'].replace('Z', '+00:00')).strftime('%B %d, %Y') if 'T' not in item['date'] else datetime.strptime(item['date'], '%Y-%m-%d').strftime('%B %d, %Y')}
         </div>
         <div>
           <a href="{item['url']}" style="color: #d2691e; text-decoration: none; font-weight: bold;">
-            📰 Read full article →
+            >> Read full article
           </a>
         </div>
       </div>'''
@@ -121,12 +121,12 @@ class EmailSender:
         for i, item in enumerate(summaries):
             date_str = datetime.strptime(item['date'], '%Y-%m-%d').strftime('%B %d, %Y') if 'T' not in item['date'] else item['date']
             news_items.append(
-                f"{i + 1}. {item['summary']}\n   📅 {date_str}\n   📰 {item['url']}"
+                f"{i + 1}. {item['summary']}\n   Date: {date_str}\n   Link: {item['url']}"
             )
 
         news_content = '\n\n'.join(news_items)
         
-        return f'''🥋 SUMO WRESTLING NEWS DIGEST
+        return f'''SUMO WRESTLING NEWS DIGEST
 
 {email_meta['intro']}
 

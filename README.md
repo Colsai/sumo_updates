@@ -15,6 +15,40 @@ An AI-powered Python application that scrapes news from multiple sumo wrestling 
 - 🔄 **Fallback Support**: Works with or without OpenAI API key (uses basic summaries as fallback)
 - 📊 **SQLite Database**: Tracks all scraped articles, prevents duplicates, maintains processing history
 
+## Project Structure
+
+```
+sumo_updates/
+├── main.py                 # Main entry point - run this file
+├── README.md
+├── requirements.txt
+├── .env                    # Your environment variables
+├── src/                    # Core application code
+│   ├── main.py            # Application logic
+│   ├── scraper.py         # News scraping functionality
+│   ├── emailer.py         # Email sending functionality
+│   ├── ai_processor.py    # AI/OpenAI integration
+│   └── database.py        # SQLite database operations
+├── config/                # Configuration files
+│   └── .env.example       # Environment template
+├── data/                  # Data storage
+│   └── sumo_news.db       # SQLite database
+├── scripts/               # Automation scripts
+│   ├── run_sumo_news.bat  # Windows batch runner
+│   └── setup_task_scheduler.ps1  # Task Scheduler setup
+├── tests/                 # Test and utility scripts
+│   ├── test_*.py          # Test files
+│   ├── manage_db.py       # Database management
+│   └── view_archives.py   # Archive viewer
+├── docs/                  # Documentation
+│   ├── TASK_SCHEDULER_SETUP.md
+│   └── EXAMPLE_EMAIL.md
+├── assets/                # Static assets
+│   └── images/            # Email header images
+├── logs/                  # Application logs (auto-created)
+└── archives/              # Email archives (auto-created)
+```
+
 ## Setup
 
 1. **Clone and install dependencies**:
@@ -24,7 +58,7 @@ An AI-powered Python application that scrapes news from multiple sumo wrestling 
 
 2. **Configure environment variables**:
    ```bash
-   cp .env.example .env
+   cp config/.env.example .env
    # Edit .env with your credentials
    ```
 
@@ -38,19 +72,24 @@ An AI-powered Python application that scrapes news from multiple sumo wrestling 
 
 ## Usage
 
-**Run the main application**:
+**Run the main application** (from project root):
 ```bash
-python src/main.py
+python main.py
 ```
 
 **Test all components**:
 ```bash
-python src/main.py --test
+python main.py --test
 ```
 
 **Get help**:
 ```bash
-python src/main.py --help
+python main.py --help
+```
+
+**Alternative: Run from src directory** (legacy):
+```bash
+cd src && python main.py
 ```
 
 ## Testing

@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-09-01T21:39:37.229981",
+  "subject": "Test Sumo News Digest - Archive Test",
+  "intro": "This is a test email to verify the archiving functionality works correctly.",
+  "recipient": "recipient@test.com",
+  "article_count": 2,
+  "articles": [
+    {
+      "source": "Japan Sumo Association",
+      "title": "Tournament Results Announced",
+      "summary": "Terunofuji wins championship with impressive 14-1 record, defeating all challengers.",
+      "url": "https://www.sumo.or.jp/test1",
+      "date": "2025-09-02"
+    },
+    {
+      "source": "Japan Times",
+      "title": "Rising Sumo Stars",
+      "summary": "Young wrestlers show promise in upcoming tournament rankings.",
+      "url": "https://www.japantimes.co.jp/test2",
+      "date": "2025-09-01"
+    }
+  ],
+  "html_content": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <title>Test Sumo News Digest - Archive Test</title>\n</head>\n<body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\">\n  <div style=\"text-align: center; margin-bottom: 30px;\">\n    <img src=\"cid:header_image\" alt=\"Sumo Updates Newsletter\" style=\"max-width: 100%; height: auto; display: block; margin: 0 auto;\">\n  </div>\n  \n  <div style=\"margin-bottom: 20px;\">\n    <p style=\"font-size: 16px; margin-bottom: 20px;\">This is a test email to verify the archiving functionality works correctly.</p>\n  </div>\n  \n  \n      <div style=\"margin-bottom: 20px; padding: 15px; border-left: 4px solid #d2691e; background-color: #fafafa;\">\n        <div style=\"font-size: 16px; margin-bottom: 8px; color: #333;\">\n          <strong>1.</strong> Terunofuji wins championship with impressive 14-1 record, defeating all challengers.\n        </div>\n        <div style=\"font-size: 12px; color: #666; margin-bottom: 5px;\">\n          📅 September 02, 2025\n        </div>\n        <div>\n          <a href=\"https://www.sumo.or.jp/test1\" style=\"color: #d2691e; text-decoration: none; font-weight: bold;\">\n            📰 Read full article →\n          </a>\n        </div>\n      </div>\n      <div style=\"margin-bottom: 20px; padding: 15px; border-left: 4px solid #d2691e; background-color: #fafafa;\">\n        <div style=\"font-size: 16px; margin-bottom: 8px; color: #333;\">\n          <strong>2.</strong> Young wrestlers show promise in upcoming tournament rankings.\n        </div>\n        <div style=\"font-size: 12px; color: #666; margin-bottom: 5px;\">\n          📅 September 01, 2025\n        </div>\n        <div>\n          <a href=\"https://www.japantimes.co.jp/test2\" style=\"color: #d2691e; text-decoration: none; font-weight: bold;\">\n            📰 Read full article →\n          </a>\n        </div>\n      </div>\n  \n  <div style=\"margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;\">\n    <p>This digest was automatically generated from multiple sumo news sources</p>\n    <p>Generated on September 01, 2025 at 09:39 PM</p>\n    <p style=\"margin-top: 15px; font-size: 11px;\">\n      To unsubscribe from these emails, please reply with \"UNSUBSCRIBE\" or contact the sender.<br>\n      This is an automated digest service. We respect your privacy and email preferences.\n    </p>\n  </div>\n</body>\n</html>",
+  "text_content": "🥋 SUMO WRESTLING NEWS DIGEST\n\nThis is a test email to verify the archiving functionality works correctly.\n\n1. Terunofuji wins championship with impressive 14-1 record, defeating all challengers.\n   📅 September 02, 2025\n   📰 https://www.sumo.or.jp/test1\n\n2. Young wrestlers show promise in upcoming tournament rankings.\n   📅 September 01, 2025\n   📰 https://www.japantimes.co.jp/test2\n\n---\nThis digest was automatically generated from multiple sumo news sources\nGenerated on September 01, 2025 at 09:39 PM\n\nTo unsubscribe: Reply with \"UNSUBSCRIBE\" or contact the sender.\nWe respect your privacy and email preferences."
+}

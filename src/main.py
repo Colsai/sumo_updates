@@ -6,6 +6,12 @@ from scraper import SumoNewsScraper
 from ai_processor import AIProcessor
 from emailer import EmailSender
 
+# Set up proper Unicode handling for Windows console
+if sys.platform.startswith('win'):
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+
 
 class SumoNewsApp:
     def __init__(self):
@@ -70,7 +76,10 @@ class SumoNewsApp:
                 
                 print('AI summaries generated:')
                 for i, item in enumerate(processed_items):
-                    print(f'  {i + 1}. {item["summary"]}')
+                    try:
+                        print(f'  {i + 1}. {item["summary"]}')
+                    except UnicodeEncodeError:
+                        print(f'  {i + 1}. [Summary contains special characters]')
 
                 # Step 4: Create email digest
                 print('\nCreating email digest...')
@@ -166,9 +175,15 @@ class SumoNewsApp:
                     'url': 'https://example.com',
                     'content': 'Test content'
                 })
-                print(f'AI: OK ({test_summary[:50]}...)\n')
+                try:
+                    print(f'AI: OK ({test_summary[:50]}...)\n')
+                except UnicodeEncodeError:
+                    print('AI: OK (summary contains special characters)\n')
             except Exception as error:
-                print(f'AI: Failed ({error})\n')
+                try:
+                    print(f'AI: Failed ({error})\n')
+                except UnicodeEncodeError:
+                    print('AI: Failed (Unicode error in response)\n')
         else:
             print('AI: Skipped (no API key)\n')
 

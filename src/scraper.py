@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+import os
 from datetime import datetime
 from typing import List, Dict, Optional
 import time
@@ -8,7 +9,11 @@ from database import NewsDatabase
 
 
 class SumoNewsScraper:
-    def __init__(self, db_path: str = 'sumo_news.db'):
+    def __init__(self, db_path: str = None):
+        if db_path is None:
+            # Default to data directory
+            project_root = os.path.dirname(os.path.dirname(__file__))
+            db_path = os.path.join(project_root, 'data', 'sumo_news.db')
         self.sources = [
             {
                 'name': 'Japan Sumo Association',
@@ -35,7 +40,7 @@ class SumoNewsScraper:
         all_news = []
         
         for source in self.sources:
-            print(f'  Fetching from {source["name"]}... (o_o)')
+            print(f'  Fetching from {source["name"]}...')
             try:
                 news_items = source['parser'](source['url'])
                 for item in news_items:
