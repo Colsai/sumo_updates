@@ -6,10 +6,12 @@ from datetime import datetime
 from typing import List, Dict, Optional
 import time
 from database import NewsDatabase
+from ai_processor import AIProcessor
+from similarity_analyzer import SimilarityAnalyzer
 
 
 class SumoNewsScraper:
-    def __init__(self, db_path: str = None):
+    def __init__(self, db_path: str = None, ai_processor: AIProcessor = None):
         if db_path is None:
             # Default to data directory
             project_root = os.path.dirname(os.path.dirname(__file__))
@@ -35,9 +37,26 @@ class SumoNewsScraper:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
         self.db = NewsDatabase(db_path)
+        self.ai_processor = ai_processor
+        self.similarity_analyzer = None
+        
+        # Initialize similarity analyzer if AI processor is available
+        if self.ai_processor:
+            self.similarity_analyzer = SimilarityAnalyzer(self.db, self.ai_processor)
+            
+        # Enable vector mode flag
+        self.vector_mode = self.ai_processor is not None
 
-    def scrape_news(self, save_to_db: bool = True) -> List[Dict]:
+    def scrape_news(self, save_to_db: bool = True, 
+                   use_vector_analysis: bool = None) -> List[Dict]:
+        """
+        Scrape news from all sources with optional vector analysis
+        """
         all_news = []
+        
+        # Use vector analysis if available and not explicitly disabled
+        if use_vector_analysis is None:
+            use_vector_analysis = self.vector_mode
         
         for source in self.sources:
             print(f'  Fetching from {source["name"]}...')
@@ -58,12 +77,66 @@ class SumoNewsScraper:
         unique_news = self._remove_duplicates(all_news)
         relevant_news = self._filter_relevant_news(unique_news)
         
+        processed_articles = []
+        duplicate_count = 0
+        new_article_count = 0
+        
         if save_to_db and relevant_news:
-            new_articles = self.db.save_articles(relevant_news)
-            print(f'Saved {new_articles} new articles to database')
+            if use_vector_analysis and self.similarity_analyzer:
+                # Use vector-based duplicate detection and relationship analysis
+                print(f'Processing {len(relevant_news)} articles with vector analysis...')
+                
+                for i, article in enumerate(relevant_news):
+                    print(f'Processing article {i+1}/{len(relevant_news)}: {article["title"][:50]}...')
+                    
+                    try:
+                        result = self.similarity_analyzer.process_new_article(
+                            article, 
+                            similarity_threshold=0.85
+                        )
+                        
+                        if result['is_duplicate']:
+                            duplicate_count += 1
+                            print(f'  → Duplicate detected')
+                        elif result['article_id']:
+                            new_article_count += 1
+                            processed_articles.append({
+                                **article,
+                                'id': result['article_id'],
+                                'similar_count': len(result['similar_articles']),
+                                'relationship_count': len(result['relationships']),
+                                'entities': result['entities'],
+                                'topics': result['topics']
+                            })
+                            print(f'  → Saved with {len(result["similar_articles"])} similar articles')
+                        
+                        # Rate limiting for API calls
+                        time.sleep(0.5)
+                        
+                    except Exception as e:
+                        print(f'  → Error processing article: {e}')
+                        # Fallback to basic save
+                        try:
+                            if not self.db.article_exists(article['url']):
+                                article_ids = self.db.save_articles([article])
+                                if article_ids > 0:
+                                    new_article_count += 1
+                        except:
+                            pass
+                
+                print(f'Vector analysis complete:')
+                print(f'  - New articles: {new_article_count}')
+                print(f'  - Duplicates detected: {duplicate_count}')
+                
+            else:
+                # Fallback to traditional URL-based duplicate detection
+                new_articles = self.db.save_articles(relevant_news)
+                new_article_count = new_articles
+                print(f'Saved {new_articles} new articles to database (traditional method)')
+                processed_articles = relevant_news[:10]
         
         print(f'Found {len(relevant_news)} total news items from all sources')
-        return relevant_news[:10]  # Return top 10 items from all sources
+        return processed_articles if processed_articles else relevant_news[:10]
 
     def get_unprocessed_articles(self, limit: int = 10) -> List[Dict]:
         """Get unprocessed articles from database for email digest"""

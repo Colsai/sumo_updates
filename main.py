@@ -24,5 +24,7 @@ if __name__ == '__main__':
         app.test_components()
     elif '--help' in args:
         show_help()
+    elif '--dry-run' in args:
+        app.run(dry_run=True)
     else:
         app.run()

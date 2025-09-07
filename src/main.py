@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from scraper import SumoNewsScraper
 from ai_processor import AIProcessor
 from emailer import EmailSender
+from email_clash_checker import EmailClashChecker
 
 # Set up proper Unicode handling for Windows console
 if sys.platform.startswith('win'):
@@ -17,14 +18,19 @@ class SumoNewsApp:
     def __init__(self):
         load_dotenv()
         
-        self.scraper = SumoNewsScraper()
-        
         # Only initialize AI processor if API key is provided
         openai_key = os.getenv('OPENAI_API_KEY')
         if openai_key:
             self.ai_processor = AIProcessor(openai_key)
         else:
             self.ai_processor = None
+            
+        # Initialize scraper with AI processor for vector capabilities
+        self.scraper = SumoNewsScraper(ai_processor=self.ai_processor)
+        
+        # Initialize email clash checker
+        archives_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'archives')
+        self.clash_checker = EmailClashChecker(archives_dir, self.ai_processor)
             
         self.email_sender = EmailSender({
             'host': os.getenv('EMAIL_HOST'),
@@ -34,7 +40,7 @@ class SumoNewsApp:
             'to': os.getenv('EMAIL_TO')
         })
 
-    def run(self):
+    def run(self, dry_run=False):
         try:
             print('''
     Sumo News Emailer
@@ -51,13 +57,24 @@ class SumoNewsApp:
 
             # Step 2: Get unprocessed articles from database
             print('Getting unprocessed articles from database...')
-            news_items = self.scraper.get_unprocessed_articles(limit=10)
+            raw_news_items = self.scraper.get_unprocessed_articles(limit=20)
             
-            if not news_items:
+            if not raw_news_items:
                 print('No unprocessed news items found. Exiting.')
                 return
 
-            print(f'Found {len(news_items)} unprocessed news items:')
+            print(f'Found {len(raw_news_items)} unprocessed news items')
+            
+            # Step 2a: Filter articles to avoid email clashes
+            print('\nFiltering articles to avoid email content clashes...')
+            filter_result = self.clash_checker.filter_articles_for_email(raw_news_items, check_days=14)
+            news_items = filter_result['approved_articles'][:10]  # Limit to top 10 approved
+            
+            if not news_items:
+                print('All articles filtered out due to recent duplicates. No new content to send.')
+                return
+            
+            print(f'After filtering: {len(news_items)} articles approved for email:')
             for i, item in enumerate(news_items):
                 source_label = f"[{item.get('source', 'Unknown')}]"
                 print(f'  {i + 1}. {source_label} {item["title"][:60]}...')
@@ -102,19 +119,32 @@ class SumoNewsApp:
                 }
 
             # Step 5: Send email
-            print('\nSending email...')
-            result = self.email_sender.send_news_digest(processed_items, email_meta)
+            if dry_run:
+                print('\nDRY RUN: Generating email content without sending...')
+            else:
+                print('\nSending email...')
+            result = self.email_sender.send_news_digest(processed_items, email_meta, dry_run=dry_run)
             
             if result['success']:
-                print('Email sent successfully!')
-                print(f'Message ID: {result.get("message_id", "N/A")}')
-                print('\nNote: Recipients can unsubscribe by replying with "UNSUBSCRIBE"')
-                print('or by contacting the sender directly.')
+                if dry_run:
+                    print('Dry run completed successfully!')
+                    print(f'Simulated Message ID: {result.get("message_id", "N/A")}')
+                    print('\nEmail content has been generated and archived.')
+                    print('Review the archived email in the archives/ folder.')
+                    print('When ready, run without --dry-run to send actual emails.')
+                else:
+                    print('Email sent successfully!')
+                    print(f'Message ID: {result.get("message_id", "N/A")}')
+                    print('\nNote: Recipients can unsubscribe by replying with "UNSUBSCRIBE"')
+                    print('or by contacting the sender directly.')
                 
-                # Mark articles as processed in database
-                summaries = [item.get('summary', '') for item in processed_items]
-                self.scraper.mark_articles_processed(processed_items, summaries)
-                print('Articles marked as processed in database.')
+                # Mark articles as processed in database (only if not dry run)
+                if not dry_run:
+                    summaries = [item.get('summary', '') for item in processed_items]
+                    self.scraper.mark_articles_processed(processed_items, summaries)
+                    print('Articles marked as processed in database.')
+                else:
+                    print('Dry run: Articles not marked as processed (can be reused for testing).')
                 
             else:
                 print(f'Failed to send email: {result["error"]}')
@@ -198,6 +228,7 @@ Sumo News Emailer
 Usage:
   python src/main.py           - Run the main application
   python src/main.py --test    - Test all components
+  python src/main.py --dry-run - Generate email without sending (for testing)
   python src/main.py --help    - Show this help
 
 Environment variables required:
@@ -221,5 +252,7 @@ if __name__ == '__main__':
         app.test_components()
     elif '--help' in args:
         show_help()
+    elif '--dry-run' in args:
+        app.run(dry_run=True)
     else:
         app.run()

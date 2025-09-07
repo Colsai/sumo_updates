@@ -7,6 +7,7 @@ from datetime import datetime
 import base64
 import os
 import json
+import time
 
 
 class EmailSender:
@@ -16,7 +17,7 @@ class EmailSender:
         self.header_image_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'images', 'b3f127bc-12dd-4fcc-ac1c-c7ba53c1034b.png')
         self.archives_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'archives')
 
-    def send_news_digest(self, summaries: List[Dict], email_meta: Dict[str, str]) -> Dict:
+    def send_news_digest(self, summaries: List[Dict], email_meta: Dict[str, str], dry_run: bool = False) -> Dict:
         try:
             if not summaries:
                 print('No news to send')
@@ -56,15 +57,21 @@ class EmailSender:
                     img.add_header('Content-Disposition', 'inline', filename='header.png')
                     msg.attach(img)
 
-            # Send email
-            print('Sending email...')
-            with smtplib.SMTP(self.config['host'], int(self.config['port'])) as server:
-                server.starttls()
-                server.login(self.config['user'], self.config['pass'])
-                message_id = server.send_message(msg)
-            
-            print(f'Email sent successfully: {message_id}')
-            return {'success': True, 'message_id': str(message_id)}
+            # Send email or simulate in dry-run mode
+            if dry_run:
+                print('DRY RUN: Email content generated but not sent')
+                message_id = 'dry-run-' + str(int(time.time()))
+                print(f'Dry run completed with simulated message ID: {message_id}')
+                return {'success': True, 'message_id': message_id, 'dry_run': True}
+            else:
+                print('Sending email...')
+                with smtplib.SMTP(self.config['host'], int(self.config['port'])) as server:
+                    server.starttls()
+                    server.login(self.config['user'], self.config['pass'])
+                    message_id = server.send_message(msg)
+                
+                print(f'Email sent successfully: {message_id}')
+                return {'success': True, 'message_id': str(message_id)}
             
         except Exception as error:
             print(f'Error sending email: {error}')
