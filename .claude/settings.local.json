@@ -5,7 +5,9 @@
       "Bash(git commit:*)",
       "Bash(mkdir:*)",
       "Bash(python:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

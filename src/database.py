@@ -108,6 +108,21 @@ class NewsDatabase:
                 )
             ''')
             
+            # Create sumo_tips table for educational content
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS sumo_tips (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    category TEXT NOT NULL,
+                    difficulty_level TEXT DEFAULT 'beginner',
+                    created_at TEXT NOT NULL,
+                    last_used_at TEXT,
+                    usage_count INTEGER DEFAULT 0,
+                    is_active BOOLEAN DEFAULT TRUE
+                )
+            ''')
+            
             # Create vector similarity virtual tables
             cursor.execute('''
                 CREATE VIRTUAL TABLE IF NOT EXISTS article_content_vectors USING vec0(
@@ -205,6 +220,16 @@ class NewsDatabase:
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_article_tags_confidence ON article_tags(confidence_score)')
         except Exception as e:
             print(f'Note: Could not create tag indexes: {e}')
+        
+        # Sumo tips table indexes
+        try:
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_sumo_tips_category ON sumo_tips(category)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_sumo_tips_difficulty ON sumo_tips(difficulty_level)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_sumo_tips_usage ON sumo_tips(usage_count)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_sumo_tips_last_used ON sumo_tips(last_used_at)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_sumo_tips_active ON sumo_tips(is_active)')
+        except Exception as e:
+            print(f'Note: Could not create sumo tips indexes: {e}')
 
     def _generate_url_hash(self, url: str) -> str:
         """Generate a hash for the URL to use as unique identifier"""

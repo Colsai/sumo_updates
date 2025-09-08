@@ -6,6 +6,7 @@ from scraper import SumoNewsScraper
 from ai_processor import AIProcessor
 from emailer import EmailSender
 from email_clash_checker import EmailClashChecker
+from sumo_tip_manager import SumoTipManager
 
 # Set up proper Unicode handling for Windows console
 if sys.platform.startswith('win'):
@@ -31,6 +32,9 @@ class SumoNewsApp:
         # Initialize email clash checker
         archives_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'archives')
         self.clash_checker = EmailClashChecker(archives_dir, self.ai_processor)
+        
+        # Initialize sumo tip manager
+        self.tip_manager = SumoTipManager(self.scraper.db)
             
         self.email_sender = EmailSender({
             'host': os.getenv('EMAIL_HOST'),
@@ -98,9 +102,19 @@ class SumoNewsApp:
                     except UnicodeEncodeError:
                         print(f'  {i + 1}. [Summary contains special characters]')
 
-                # Step 4: Create email digest
+                # Step 4: Select sumo tip for email
+                print('\nSelecting educational sumo tip...')
+                selected_tip = self.ai_processor.select_sumo_tip(self.tip_manager)
+                if selected_tip:
+                    print(f'Selected tip: {selected_tip["title"]} (Category: {selected_tip["category"]})')
+                    # Mark tip as used
+                    self.tip_manager.mark_tip_as_used(selected_tip['id'])
+                else:
+                    print('No sumo tip available')
+
+                # Step 5: Create email digest
                 print('\nCreating email digest...')
-                email_meta = self.ai_processor.create_email_digest(processed_items)
+                email_meta = self.ai_processor.create_email_digest(processed_items, selected_tip)
                 print(f'Email subject: {email_meta["subject"]}')
                 print(f'Email intro: {email_meta["intro"]}')
             else:
@@ -113,17 +127,27 @@ class SumoNewsApp:
                         'processed_at': time.time()
                     })
                     
+                # Select sumo tip even without AI
+                selected_tip = None
+                try:
+                    selected_tip = self.tip_manager.get_unused_tip(days_since_last_use=30)
+                    if selected_tip:
+                        print(f'Selected tip: {selected_tip["title"]} (Category: {selected_tip["category"]})')
+                        self.tip_manager.mark_tip_as_used(selected_tip['id'])
+                except Exception as e:
+                    print(f'Could not select tip: {e}')
+                    
                 email_meta = {
                     'subject': 'Sumo Wrestling News Update',
                     'intro': 'Here are the latest updates from the world of sumo wrestling!'
                 }
 
-            # Step 5: Send email
+            # Step 6: Send email
             if dry_run:
                 print('\nDRY RUN: Generating email content without sending...')
             else:
                 print('\nSending email...')
-            result = self.email_sender.send_news_digest(processed_items, email_meta, dry_run=dry_run)
+            result = self.email_sender.send_news_digest(processed_items, email_meta, selected_tip, dry_run=dry_run)
             
             if result['success']:
                 if dry_run:

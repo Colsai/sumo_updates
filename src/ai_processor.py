@@ -60,17 +60,22 @@ Format the response as a single tweet that captures the essence of the news. Inc
         
         return summaries
 
-    def create_email_digest(self, summaries: List[Dict]) -> Dict[str, str]:
+    def create_email_digest(self, summaries: List[Dict], sumo_tip: Dict = None) -> Dict[str, str]:
         try:
             news_content = '\n\n'.join([
                 f"{i + 1}. {item['summary']}\n   📰 Read more: {item['url']}"
                 for i, item in enumerate(summaries)
             ])
 
-            prompt = f"""Create an engaging email subject line and introduction for a sumo wrestling news digest. The email contains {len(summaries)} news items. Make it enthusiastic and appealing to sumo fans.
+            # Include tip info in prompt if provided
+            tip_info = ""
+            if sumo_tip:
+                tip_info = f"\n\nToday's Bite-sized Sumo tip: {sumo_tip['title']}"
+
+            prompt = f"""Create an engaging email subject line and introduction for a sumo wrestling news digest. The email contains {len(summaries)} news items{" and includes an educational sumo tip" if sumo_tip else ""}. Make it enthusiastic and appealing to sumo fans.
 
 News items:
-{news_content}
+{news_content}{tip_info}
 
 Provide:
 1. SUBJECT: [compelling subject line under 50 characters]
@@ -428,3 +433,61 @@ Focus on specific, searchable terms. Limit to 10 most relevant tags."""
                 unique_tags.append(clean_tag)
         
         return unique_tags[:10]  # Limit to 10 tags
+    
+    def select_sumo_tip(self, tip_manager) -> Optional[Dict]:
+        """Select an appropriate sumo tip for the email"""
+        try:
+            # Try to get an unused tip from different categories in order of preference
+            categories = ['history', 'culture', 'techniques', 'tournaments', 'facts', 'modern']
+            
+            for category in categories:
+                tip = tip_manager.get_unused_tip(category=category, days_since_last_use=30)
+                if tip:
+                    return tip
+            
+            # If no category-specific tips available, get any unused tip
+            tip = tip_manager.get_unused_tip(days_since_last_use=30)
+            if tip:
+                return tip
+            
+            # As last resort, get any random tip (least recently used)
+            tip = tip_manager.get_unused_tip(days_since_last_use=1)
+            return tip
+            
+        except Exception as error:
+            print(f'Error selecting sumo tip: {error}')
+            return None
+    
+    def format_sumo_tip(self, tip: Dict) -> Dict[str, str]:
+        """Format sumo tip for email inclusion"""
+        if not tip:
+            return None
+            
+        try:
+            # Format the tip content for email
+            formatted_tip = {
+                'title': tip['title'],
+                'content': tip['content'],
+                'category': tip['category'].title(),
+                'difficulty': tip['difficulty_level'].title(),
+                'html_content': f"""
+                    <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #d4af37; margin: 20px 0;">
+                        <h3 style="color: #d4af37; margin: 0 0 10px 0;">{tip['title']}</h3>
+                        <p style="margin: 0; line-height: 1.5;">{tip['content']}</p>
+                        <small style="color: #6c757d; font-style: italic;">Category: {tip['category'].title()}</small>
+                    </div>
+                """,
+                'text_content': f"""
+BITE-SIZED SUMO: {tip['title']}
+{'-' * (len(tip['title']) + 18)}
+{tip['content']}
+
+Category: {tip['category'].title()}
+                """
+            }
+            
+            return formatted_tip
+            
+        except Exception as error:
+            print(f'Error formatting sumo tip: {error}')
+            return None

@@ -20,6 +20,7 @@ from dotenv import load_dotenv
 from scraper import SumoNewsScraper
 from ai_processor import AIProcessor
 from emailer import EmailSender
+from sumo_tip_manager import SumoTipManager
 
 # Set up proper Unicode handling for Windows console
 if sys.platform.startswith('win'):
@@ -49,6 +50,9 @@ class TestPipeline:
             'pass': os.getenv('EMAIL_PASS'),
             'to': os.getenv('EMAIL_TO')
         })
+        
+        # Initialize tip manager
+        self.tip_manager = SumoTipManager(self.scraper.db)
 
     def run_pipeline_test(self):
         try:
@@ -102,9 +106,19 @@ class TestPipeline:
                     except UnicodeEncodeError:
                         print(f'  {i + 1}. [Summary contains special characters]')
 
+                # Select sumo tip
+                print('\nStep 4: Selecting educational sumo tip...')
+                selected_tip = self.ai_processor.select_sumo_tip(self.tip_manager)
+                if selected_tip:
+                    print(f'Selected tip: {selected_tip["title"]} (Category: {selected_tip["category"]})')
+                    # Mark tip as used
+                    self.tip_manager.mark_tip_as_used(selected_tip['id'])
+                else:
+                    print('No sumo tip available')
+
                 # Create email digest metadata
-                print('\nStep 4: Creating email digest metadata...')
-                email_meta = self.ai_processor.create_email_digest(processed_items)
+                print('\nStep 5: Creating email digest metadata...')
+                email_meta = self.ai_processor.create_email_digest(processed_items, selected_tip)
                 print(f'Email subject: {email_meta["subject"]}')
                 print(f'Email intro: {email_meta["intro"]}')
             else:
@@ -117,26 +131,39 @@ class TestPipeline:
                         'processed_at': time.time()
                     })
                     
+                # Select sumo tip even without AI
+                selected_tip = None
+                try:
+                    selected_tip = self.tip_manager.get_unused_tip(days_since_last_use=30)
+                    if selected_tip:
+                        print(f'Selected tip: {selected_tip["title"]} (Category: {selected_tip["category"]})')
+                        self.tip_manager.mark_tip_as_used(selected_tip['id'])
+                except Exception as e:
+                    print(f'Could not select tip: {e}')
+                    
                 email_meta = {
                     'subject': 'Sumo Wrestling News Update - Test Pipeline',
                     'intro': 'Here are the latest updates from the world of sumo wrestling! (Test Mode)'
                 }
 
-            # Step 4: Generate email content (without sending)
-            print('\nStep 5: Generating email content...')
-            html_content = self.email_sender._generate_html_email(processed_items, email_meta)
-            text_content = self.email_sender._generate_text_email(processed_items, email_meta)
+            # Step 6: Generate email content (without sending)
+            print('\nStep 6: Generating email content...')
+            html_content = self.email_sender._generate_html_email(processed_items, email_meta, selected_tip)
+            text_content = self.email_sender._generate_text_email(processed_items, email_meta, selected_tip)
 
-            # Step 5: Save email files for review
+            # Step 7: Save email files for review
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             test_dir = os.path.join(project_root, 'tests', 'output')
             os.makedirs(test_dir, exist_ok=True)
 
-            # Save HTML version
+            # Save HTML version with embedded banner image for browser viewing
             html_filename = f'test_email_{timestamp}.html'
             html_path = os.path.join(test_dir, html_filename)
+            
+            # Use the emailer's browser-viewable HTML method
+            browser_html = self.email_sender._create_browser_viewable_html(html_content)
             with open(html_path, 'w', encoding='utf-8') as f:
-                f.write(html_content)
+                f.write(browser_html)
 
             # Save text version
             text_filename = f'test_email_{timestamp}.txt'

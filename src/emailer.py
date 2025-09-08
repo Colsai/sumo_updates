@@ -17,14 +17,14 @@ class EmailSender:
         self.header_image_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'images', 'b3f127bc-12dd-4fcc-ac1c-c7ba53c1034b.png')
         self.archives_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'archives')
 
-    def send_news_digest(self, summaries: List[Dict], email_meta: Dict[str, str], dry_run: bool = False) -> Dict:
+    def send_news_digest(self, summaries: List[Dict], email_meta: Dict[str, str], sumo_tip: Dict = None, dry_run: bool = False) -> Dict:
         try:
             if not summaries:
                 print('No news to send')
                 return {'success': False, 'error': 'No news items'}
 
-            html_content = self._generate_html_email(summaries, email_meta)
-            text_content = self._generate_text_email(summaries, email_meta)
+            html_content = self._generate_html_email(summaries, email_meta, sumo_tip)
+            text_content = self._generate_text_email(summaries, email_meta, sumo_tip)
 
             # Save the generated email to archives
             self._save_email_archive(summaries, email_meta, html_content, text_content)
@@ -77,74 +77,190 @@ class EmailSender:
             print(f'Error sending email: {error}')
             return {'success': False, 'error': str(error)}
 
-    def _generate_html_email(self, summaries: List[Dict], email_meta: Dict[str, str]) -> str:
+    def _generate_html_email(self, summaries: List[Dict], email_meta: Dict[str, str], sumo_tip: Dict = None) -> str:
+        # Generate news items with modern card design
         news_items = ''
         for i, item in enumerate(summaries):
+            # Parse and format article date
+            try:
+                if 'T' in item['date']:
+                    article_date = datetime.fromisoformat(item['date'].replace('Z', '+00:00')).strftime('%B %d, %Y')
+                else:
+                    article_date = datetime.strptime(item['date'], '%Y-%m-%d').strftime('%B %d, %Y')
+            except:
+                article_date = item['date']
+
             news_items += f'''
-      <div style="margin-bottom: 20px; padding: 15px; border-left: 4px solid #d2691e; background-color: #fafafa;">
-        <div style="font-size: 16px; margin-bottom: 8px; color: #333;">
-          <strong>{i + 1}.</strong> {item['summary']}
-        </div>
-        <div style="font-size: 12px; color: #666; margin-bottom: 5px;">
-          Date: {datetime.fromisoformat(item['date'].replace('Z', '+00:00')).strftime('%B %d, %Y') if 'T' not in item['date'] else datetime.strptime(item['date'], '%Y-%m-%d').strftime('%B %d, %Y')}
-        </div>
-        <div>
-          <a href="{item['url']}" style="color: #d2691e; text-decoration: none; font-weight: bold;">
-            >> Read full article
-          </a>
-        </div>
-      </div>'''
+          <div style="margin-bottom: 24px; background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #f0f0f0;">
+            <div style="display: flex; align-items: center; margin-bottom: 12px;">
+              <div style="background: linear-gradient(135deg, #e74c3c, #d35400); color: white; font-weight: bold; font-size: 14px; padding: 4px 12px; border-radius: 20px; margin-right: 12px;">
+                #{i + 1}
+              </div>
+              <div style="font-size: 13px; color: #7f8c8d; font-weight: 500;">
+                {article_date}
+              </div>
+            </div>
+            <div style="font-size: 16px; line-height: 1.5; color: #2c3e50; margin-bottom: 16px; font-weight: 400;">
+              {item['summary']}
+            </div>
+            <div>
+              <a href="{item['url']}" style="display: inline-flex; align-items: center; background: linear-gradient(135deg, #3498db, #2980b9); color: white; text-decoration: none; font-weight: 600; font-size: 14px; padding: 10px 18px; border-radius: 25px; transition: all 0.3s ease;">
+                <span style="margin-right: 6px;">📖</span> Read Article
+              </a>
+            </div>
+          </div>'''
+
+        # Current date for newsletter publication
+        publication_date = datetime.now().strftime('%B %d, %Y')
+        publication_weekday = datetime.now().strftime('%A')
 
         return f'''<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{email_meta['subject']}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="text-align: center; margin-bottom: 30px;">
-    <img src="cid:header_image" alt="Sumo Updates Newsletter" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
-  </div>
-  
-  <div style="margin-bottom: 20px;">
-    <p style="font-size: 16px; margin-bottom: 20px;">{email_meta['intro']}</p>
-  </div>
-  
-  {news_items}
-  
-  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;">
-    <p>This digest was automatically generated from multiple sumo news sources</p>
-    <p>Generated on {datetime.now().strftime('%B %d, %Y')} at {datetime.now().strftime('%I:%M %p')}</p>
-    <p style="margin-top: 15px; font-size: 11px;">
-      To unsubscribe from these emails, please reply with "UNSUBSCRIBE" or contact the sender.<br>
-      This is an automated digest service. We respect your privacy and email preferences.
-    </p>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; line-height: 1.6;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    
+    <!-- Header Section -->
+    <div style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); padding: 0; text-align: center;">
+      <img src="cid:header_image" alt="Sumo Updates Newsletter" style="max-width: 100%; height: auto; display: block;">
+    </div>
+    
+    <!-- Publication Date Header -->
+    <div style="background: linear-gradient(135deg, #e74c3c, #d35400); color: white; text-align: center; padding: 16px 24px;">
+      <div style="font-size: 14px; font-weight: 600; opacity: 0.9; margin-bottom: 4px;">
+        📅 PUBLISHED
+      </div>
+      <div style="font-size: 18px; font-weight: 700; letter-spacing: 0.5px;">
+        {publication_weekday}, {publication_date}
+      </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div style="padding: 32px 24px; background-color: #ffffff;">
+      
+      <!-- Introduction -->
+      <div style="text-align: center; margin-bottom: 40px; padding: 24px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 16px; border-left: 4px solid #e74c3c;">
+        <h1 style="font-size: 24px; font-weight: 700; color: #2c3e50; margin: 0 0 16px 0; line-height: 1.3;">
+          🤼‍♂️ Sumo Wrestling Digest
+        </h1>
+        <p style="font-size: 16px; color: #5d6d7e; margin: 0; line-height: 1.5;">
+          {email_meta['intro']}
+        </p>
+      </div>
+      
+      <!-- News Articles Section -->
+      <div style="margin-bottom: 40px;">
+        <h2 style="font-size: 22px; font-weight: 700; color: #2c3e50; margin: 0 0 24px 0; padding-bottom: 12px; border-bottom: 3px solid #e74c3c;">
+          📰 Latest News
+        </h2>
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 12px;">
+          {news_items}
+        </div>
+      </div>
+      
+      <!-- Bite-sized Sumo Section -->
+      {self._generate_sumo_tip_html(sumo_tip) if sumo_tip else ''}
+      
+    </div>
+    
+    <!-- Footer -->
+    <div style="background-color: #2c3e50; color: #bdc3c7; padding: 32px 24px; text-align: center;">
+      <div style="margin-bottom: 20px;">
+        <div style="font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">
+          🤼‍♂️ Sumo Wrestling Digest
+        </div>
+        <div style="font-size: 14px; opacity: 0.8;">
+          Your source for authentic sumo wrestling news and insights
+        </div>
+      </div>
+      
+      <div style="border-top: 1px solid #34495e; padding-top: 20px; font-size: 13px; opacity: 0.7;">
+        <p style="margin: 0 0 8px 0;">
+          This digest was curated from trusted sumo wrestling sources
+        </p>
+        <p style="margin: 0 0 16px 0;">
+          Generated on {publication_date}
+        </p>
+        <p style="margin: 0; font-size: 12px;">
+          To unsubscribe, reply with "UNSUBSCRIBE" | We respect your privacy
+        </p>
+      </div>
+    </div>
+    
   </div>
 </body>
 </html>'''
 
-    def _generate_text_email(self, summaries: List[Dict], email_meta: Dict[str, str]) -> str:
+    def _generate_text_email(self, summaries: List[Dict], email_meta: Dict[str, str], sumo_tip: Dict = None) -> str:
+        # Publication date
+        publication_date = datetime.now().strftime('%B %d, %Y')
+        publication_weekday = datetime.now().strftime('%A')
+        
+        # Format news items
         news_items = []
         for i, item in enumerate(summaries):
-            date_str = datetime.strptime(item['date'], '%Y-%m-%d').strftime('%B %d, %Y') if 'T' not in item['date'] else item['date']
+            try:
+                if 'T' in item['date']:
+                    date_str = datetime.fromisoformat(item['date'].replace('Z', '+00:00')).strftime('%B %d, %Y')
+                else:
+                    date_str = datetime.strptime(item['date'], '%Y-%m-%d').strftime('%B %d, %Y')
+            except:
+                date_str = item['date']
+                
             news_items.append(
-                f"{i + 1}. {item['summary']}\n   Date: {date_str}\n   Link: {item['url']}"
+                f"#{i + 1} | {date_str}\n{item['summary']}\nRead more: {item['url']}"
             )
 
         news_content = '\n\n'.join(news_items)
         
-        return f'''SUMO WRESTLING NEWS DIGEST
+        # Add sumo tip if provided
+        sumo_tip_content = ''
+        if sumo_tip:
+            tip_title = sumo_tip.get('title', 'Sumo Fact')
+            sumo_tip_content = f'''
+
+{'=' * 60}
+🥇 BITE-SIZED SUMO: {tip_title.upper()}
+{'=' * 60}
+
+{sumo_tip.get('content', 'Educational sumo content')}
+
+📚 Category: {sumo_tip.get('category', 'General').title()}
+🎯 Level: {sumo_tip.get('difficulty_level', 'Beginner').title()}
+{'=' * 60}
+
+'''
+        
+        return f'''🤼‍♂️ SUMO WRESTLING DIGEST
+📅 PUBLISHED: {publication_weekday}, {publication_date}
 
 {email_meta['intro']}
 
-{news_content}
+📰 LATEST NEWS
+{'-' * 50}
 
----
-This digest was automatically generated from multiple sumo news sources
-Generated on {datetime.now().strftime('%B %d, %Y')} at {datetime.now().strftime('%I:%M %p')}
+{news_content}{sumo_tip_content}
 
-To unsubscribe: Reply with "UNSUBSCRIBE" or contact the sender.
-We respect your privacy and email preferences.'''
+{'*' * 60}
+This digest was curated from trusted sumo wrestling sources
+Generated on {publication_date}
+
+To unsubscribe: Reply with "UNSUBSCRIBE"
+We respect your privacy and email preferences.
+{'*' * 60}'''
 
     def test_connection(self) -> bool:
         try:
@@ -185,14 +301,71 @@ We respect your privacy and email preferences.'''
             with open(json_path, 'w', encoding='utf-8') as f:
                 json.dump(archive_data, f, indent=2, ensure_ascii=False)
             
-            # Save HTML version for easy viewing
+            # Save HTML version for easy viewing (with base64 embedded image)
             html_filename = f'email_{timestamp}.html'
             html_path = os.path.join(self.archives_path, html_filename)
             
+            # Create browser-viewable HTML with embedded image
+            browser_html = self._create_browser_viewable_html(html_content)
+            
             with open(html_path, 'w', encoding='utf-8') as f:
-                f.write(html_content)
+                f.write(browser_html)
             
             print(f'Email archived: {json_filename} and {html_filename}')
             
         except Exception as error:
             print(f'Warning: Failed to archive email: {error}')
+    
+    def _generate_sumo_tip_html(self, sumo_tip: Dict) -> str:
+        """Generate HTML section for sumo tip"""
+        if not sumo_tip:
+            return ''
+        
+        return f'''
+      <!-- Educational Section -->
+      <div style="margin-bottom: 40px;">
+        <h2 style="font-size: 22px; font-weight: 700; color: #2c3e50; margin: 0 0 24px 0; padding-bottom: 12px; border-bottom: 3px solid #f39c12;">
+          🥇 Bite-sized Sumo
+        </h2>
+        <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border-radius: 16px; padding: 28px; border-left: 6px solid #f39c12; position: relative; overflow: hidden;">
+          <div style="position: absolute; top: -10px; right: -10px; width: 60px; height: 60px; background: rgba(243, 156, 18, 0.1); border-radius: 50%; z-index: 0;"></div>
+          <div style="position: relative; z-index: 1;">
+            <h3 style="color: #e67e22; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">
+              {sumo_tip.get('title', 'Sumo Fact')}
+            </h3>
+            <p style="margin: 0 0 20px 0; line-height: 1.6; color: #2c3e50; font-size: 16px;">
+              {sumo_tip.get('content', 'Educational sumo content')}
+            </p>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+              <div style="background: rgba(230, 126, 34, 0.15); color: #d35400; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                📚 {sumo_tip.get('category', 'General').title()}
+              </div>
+              <div style="background: rgba(230, 126, 34, 0.15); color: #d35400; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                🎯 {sumo_tip.get('difficulty_level', 'Beginner').title()}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>'''
+    
+    def _create_browser_viewable_html(self, html_content: str) -> str:
+        """Convert email HTML with cid: references to browser-viewable HTML with base64 embedded images"""
+        try:
+            if os.path.exists(self.header_image_path):
+                # Read and encode the image as base64
+                with open(self.header_image_path, 'rb') as img_file:
+                    img_data = img_file.read()
+                    img_base64 = base64.b64encode(img_data).decode('utf-8')
+                    
+                # Replace cid: reference with base64 data URL
+                data_url = f'data:image/png;base64,{img_base64}'
+                browser_html = html_content.replace('src="cid:header_image"', f'src="{data_url}"')
+                
+                return browser_html
+            else:
+                # If image doesn't exist, replace with placeholder or remove
+                return html_content.replace('<img src="cid:header_image" alt="Sumo Updates Newsletter" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">', 
+                                          '<div style="text-align: center; padding: 20px; background: #f0f0f0; color: #666;">📸 Sumo Updates Newsletter Banner</div>')
+        except Exception as e:
+            print(f'Warning: Could not embed image in archived HTML: {e}')
+            return html_content
